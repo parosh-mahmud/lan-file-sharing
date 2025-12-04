@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAN File Share - Word Collaboration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 25px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #238636;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #56d364;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #2ea043;
+        }
+
+        .btn-secondary {
+            background: #21262d;
+            border: 1px solid #30363d;
+        }
+
+        .btn-secondary:hover {
+            background: #30363d;
+        }
+
+        /* Main Layout */
+        .main {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .device-info {
+            background: #21262d;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .device-info div {
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .device-info label {
+            color: #8b949e;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .device-info span {
+            color: #f0ad4e;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .peer-list {
+            margin-top: 15px;
+        }
+
+        .peer-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #21262d;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .peer-status {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #56d364;
+        }
+
+        .connect-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .connect-form input {
+            flex: 1;
+            padding: 8px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 12px;
+        }
+
+        .connect-form button {
+            padding: 8px 12px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* File Manager */
+        .file-manager {
+            display: flex;
+            flex-direction: column;
+            background: #0d1117;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .toolbar button {
+            padding: 7px 12px;
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: #30363d;
+            border-color: #484f58;
+        }
+
+        .toolbar .btn-new-word {
+            background: #0969da;
+            border-color: #0969da;
+            color: white;
+        }
+
+        .toolbar .btn-new-word:hover {
+            background: #1158c7;
+        }
+
+        .file-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background: #161b22;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .file-item:hover {
+            background: #21262d;
+            border-color: #30363d;
+        }
+
+        .file-item.selected {
+            border-color: #238636;
+            background: #1a3a2a;
+        }
+
+        .file-item.word-doc {
+            border-color: #0969da;
+        }
+
+        .file-item.word-doc:hover {
+            background: #1a2a4a;
+            border-color: #1158c7;
+        }
+
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .word-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #0969da;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .file-name {
+            font-size: 12px;
+            text-align: center;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        .file-size {
+            font-size: 10px;
+            color: #8b949e;
+            margin-top: 4px;
+        }
+
+        .file-menu {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: none;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 4px;
+        }
+
+        .file-item:hover .file-menu {
+            display: block;
+        }
+
+        .file-menu button {
+            background: none;
+            border: none;
+            color: #c9d1d9;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+        }
+
+        .file-menu button:hover {
+            background: #30363d;
+        }
+
+        /* Activity Panel */
+        .activity-panel {
+            background: #161b22;
+            border-left: 1px solid #30363d;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .activity-panel h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activity-item {
+            padding: 12px;
+            background: #21262d;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .activity-time {
+            color: #8b949e;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .activity-success {
+            border-left: 3px solid #56d364;
+        }
+
+        .activity-info {
+            border-left: 3px solid #79c0ff;
+        }
+
+        .activity-error {
+            border-left: 3px solid #f85149;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 0;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .editor-toolbar button {
+            padding: 6px 12px;
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .editor-toolbar button:hover {
+            background: #30363d;
+        }
+
+        .editor-toolbar .btn-save {
+            background: #238636;
+            color: white;
+            border-color: #238636;
+        }
+
+        .editor-toolbar .btn-save:hover {
+            background: #2ea043;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .close-btn:hover {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+
+        .editor-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            padding: 30px;
+            background: #0d1117;
+            border: none;
+            color: #c9d1d9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        .preview-pane {
+            flex: 1;
+            padding: 30px;
+            background: white;
+            color: #24292f;
+            overflow-y: auto;
+            border-left: 1px solid #30363d;
+        }
+
+        .preview-pane h1,
+        .preview-pane h2,
+        .preview-pane h3 {
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+
+        .preview-pane p {
+            margin-bottom: 1em;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #238636;
+            border-radius: 6px;
+            font-size: 12px;
+            color: white;
+        }
+
+        .sync-indicator.syncing {
+            background: #f0ad4e;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>📝 Word Collaboration - LAN Share</h1>
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span>Connected</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary" onclick="openSharedFolder()">
+                    📂 Open Folder
+                </button>
+                <button class="btn" onclick="addFiles()">
+                    ➕ Add Files
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <h2>My Device</h2>
+                <div class="device-info">
+                    <div>
+                        <label>Name:</label>
+                        <span id="device-name">Loading...</span>
+                    </div>
+                    <div>
+                        <label>IP:</label>
+                        <span id="device-ip">Loading...</span>
+                    </div>
+                    <div>
+                        <label>ID:</label>
+                        <span id="device-id">Loading...</span>
+                    </div>
+                </div>
+
+                <h2>Connected Peers</h2>
+                <div id="peer-list" class="peer-list">
+                    <div style="text-align: center; color: #8b949e; font-size: 12px; padding: 20px;">
+                        No peers connected
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 20px;">Connect to Peer</h2>
+                <div class="connect-form">
+                    <input type="text" id="peer-ip-input" placeholder="Enter IP (e.g., 192.168.1.5)">
+                    <button onclick="connectToPeer()">Connect</button>
+                </div>
+            </div>
+
+            <!-- File Manager -->
+            <div class="file-manager">
+                <div class="toolbar">
+                    <button class="btn-new-word" onclick="createNewWord()">
+                        📄 New Word Doc
+                    </button>
+                    <button onclick="createNewFolder()">
+                        📁 New Folder
+                    </button>
+                    <button onclick="refreshFiles()">
+                        🔄 Refresh
+                    </button>
+                    <button onclick="deleteSelected()" id="delete-btn" style="display: none;">
+                        🗑️ Delete
+                    </button>
+                </div>
+                <div id="file-grid" class="file-grid">
+                    <div class="empty-state">
+                        <div class="empty-icon">📂</div>
+                        <div>No files in shared folder</div>
+                        <div style="font-size: 12px; margin-top: 8px;">Add Word documents to collaborate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Activity Panel -->
+            <div class="activity-panel">
+                <h2>🔔 Activity Log</h2>
+                <div id="activity-log">
+                    <div class="activity-item activity-info">
+                        <div class="activity-time">Just now</div>
+                        <div>Application started - Word collaboration enabled</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Word Document Editor Modal -->
+    <div id="editor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <span>📝</span>
+                    <span id="editor-filename">Document.docx</span>
+                    <div id="sync-status" class="sync-indicator" style="margin-left: 20px; font-size: 11px;">
+                        ✓ Saved
+                    </div>
+                </h3>
+                <div class="editor-toolbar">
+                    <button onclick="saveDocument()">💾 Save</button>
+                    <button onclick="saveAndOpenInWord()">📄 Open in Word</button>
+                    <button class="close-btn" onclick="closeEditor()">&times;</button>
+                </div>
+            </div>
+            <div class="editor-body">
+                <textarea id="editor-textarea" class="editor-textarea"
+                    placeholder="Start typing your document..."></textarea>
+                <div id="preview-pane" class="preview-pane">
+                    <p style="color: #6c757d;">Preview will appear here...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+{
+  "name": "lan-file-share-word-collab",
+  "version": "1.0.0",
+  "description": "Collaborative file sharing with MS Word document editing support",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "electron",
+    "file-sharing",
+    "collaborative",
+    "word-documents",
+    "real-time-sync",
+    "lan"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.0",
+    "socket.io-client": "^4.6.0",
+    "chokidar": "^3.5.3",
+    "mammoth": "^1.6.0",
+    "docx": "^8.5.0"
+  },
+  "build": {
+    "appId": "com.lanshare.wordcollab",
+    "productName": "LAN File Share - Word Edition",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "assets/icon.png",
+      "category": "Utility"
+    }
+  }
+}
